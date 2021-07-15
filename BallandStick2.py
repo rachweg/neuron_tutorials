@@ -5,17 +5,16 @@ Created on Thu Jul 15 15:33:06 2021
 
 @author: rachweg
 """
-from neuron import h, gui
+from neuron import h
 #from neuron.units import ms, mV
 h.load_file('stdrun.hoc')
-import matplotlib.pyplot as plt
 
 
 class Cell:
     def __init__(self, gid, x, y, z, theta):
         self._gid = gid
         self._setup_morphology()
-        self.all = [self.soma, self.dend]
+        self.all =[] # self.soma.wholetree()
         self._setup_biophysics()
         self.x = self.y = self.z = 0                     # <-- NEW
         h.define_shape()
@@ -81,22 +80,21 @@ def create_n_BallAndStick(n, r):
         cells.append(BallAndStick(i, h.cos(theta) * r, h.sin(theta) * r, 0, theta))
     return cells    
 
+my_cells = create_n_BallAndStick(7, 50)
+ps = h.PlotShape(True)
+ps.show(0)
 my_cells = create_n_BallAndStick(5, 50)
 
-stim = h.NetStim() # Make a new stimulator
-
-# Attach it to a synapse in the middle of the dendrite
-# of the first cell in the network. (Named 'syn_' to avoid
-# being overwritten with the 'syn' var assigned later.)
+stim = h.NetStim()
 syn_ = h.ExpSyn(my_cells[0].dend(0.5))
 
 stim.number = 1
 stim.start = 9
 ncstim = h.NetCon(stim, syn_)
-ncstim.delay = 1 #* ms
-ncstim.weight[0] = 0.04 # NetCon weight is a vector.
+ncstim.delay = 1
+ncstim.weight[0] = 0.04
 
-syn_.tau = 2 #* ms
+syn_.tau = 2
 
 recording_cell = my_cells[0]
 soma_v = h.Vector().record(recording_cell.soma(0.5)._ref_v)
@@ -104,9 +102,15 @@ dend_v = h.Vector().record(recording_cell.dend(0.5)._ref_v)
 t = h.Vector().record(h._ref_t)
 h.finitialize(-65)
 h.continuerun(25)
+import matplotlib.pyplot as plt
+plt.plot(t, soma_v, label='soma(0.5)')
+plt.plot(t, dend_v, label='dend(0.5)')
+plt.legend()
+plt.show()
 
 syn_i = h.Vector().record(syn_._ref_i)
-
+h.finitialize(-65)
+h.continuerun(25)
 fig = plt.figure(figsize=(8,4))
 ax1 = fig.add_subplot(2, 1, 1)
 soma_plot = ax1.plot(t, soma_v, color='black', label='soma(0.5)')
@@ -139,8 +143,16 @@ plt.plot(t, soma_v, label='soma(0.5)')
 plt.plot(t, dend_v, label='dend(0.5)')
 plt.legend()
 plt.show()
+
 spike_times = [h.Vector() for nc in netcons]
 for nc, spike_times_vec in zip(netcons, spike_times):
     nc.record(spike_times_vec)
+h.finitialize(-65)
+h.continuerun(100)
+plt.figure()
 
-     
+for i, spike_times_vec in enumerate(spike_times):
+    plt.vlines(spike_times_vec, i + 0.5, i + 1.5)
+plt.show()
+
+

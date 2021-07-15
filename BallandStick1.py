@@ -6,10 +6,8 @@ Created on Thu Jul 15 14:57:00 2021
 @author: rachweg
 """
 from neuron import h
-#from neuron.units import ms, mV
-h.load_file('stdrun.hoc')
-import matplotlib.pyplot as plt
 
+h.load_file('stdrun.hoc')
 
 class BallAndStick:
     def __init__(self, gid):
@@ -44,6 +42,16 @@ class BallAndStick:
 
 my_cell = BallAndStick(0)
 
+import matplotlib.pyplot as plt
+
+fig = plt.figure
+
+#h.PlotShape(False).plot(plt)
+
+
+ps = h.PlotShape(True)
+ps.show(0)
+
 stim = h.IClamp(my_cell.dend(1))
 stim.delay = 5
 stim.dur = 1
@@ -51,13 +59,21 @@ stim.amp = 0.1
 
 soma_v = h.Vector().record(my_cell.soma(0.5)._ref_v)
 t = h.Vector().record(h._ref_t)
-dend_v = h.Vector().record(my_cell.dend(0.5)._ref_v)
 
 h.finitialize(-65)
 h.continuerun(25)
 
+dend_v = h.Vector().record(my_cell.dend(0.5)._ref_v)
 
-f = plt.figure(x_axis_label='t (ms)', y_axis_label='v (mV)')
+f1 = plt.figure()
+plt.xlabel('t (ms)')
+plt.ylabel('v (mV)')
+plt.plot(t, soma_v, linewidth=2)
+plt.show(f1)
+
+f = plt.figure()
+plt.xlabel('t (ms)')
+plt.ylabel('v (mV)')
 amps = [0.075 * i for i in range(1, 5)]
 colors = ['green', 'blue', 'red', 'black']
 for amp, color in zip(amps, colors):
@@ -65,19 +81,14 @@ for amp, color in zip(amps, colors):
     for my_cell.dend.nseg, width in [(1, 2), (101, 1)]:
         h.finitialize(-65)
         h.continuerun(25)
-        f.line(t, list(soma_v),
-               line_width=width,
-               legend_label='amp=%g' % amp if my_cell.dend.nseg == 1 else None,
+        plt.plot(t, list(soma_v),
+               linewidth=width,
+               label='amp=%g' % amp if my_cell.dend.nseg == 1 else None,
                color=color)
-        f.line(t, list(dend_v),
-               line_width=width,
-               line_dash='dashed',
+        plt.plot(t, list(dend_v), '--',
+               linewidth=width,
                color=color)
+plt.legend()
 plt.show(f)
-
-
-
-
-
 
 
